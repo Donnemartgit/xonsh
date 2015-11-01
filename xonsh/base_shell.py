@@ -14,7 +14,7 @@ from xonsh.environ import multiline_prompt, format_prompt
 
 
 class TeeOut(object):
-    """Tees stdout into the original sys.stdout and another buffer instance that is 
+    """Tees stdout into the original sys.stdout and another buffer instance that is
     provided.
     """
 
@@ -42,7 +42,7 @@ class TeeOut(object):
 
 
 class TeeErr(object):
-    """Tees stderr into the original sys.stdout and another buffer instance that is 
+    """Tees stderr into the original sys.stdout and another buffer instance that is
     provided.
     """
 
@@ -70,7 +70,7 @@ class TeeErr(object):
 
 
 class Tee(io.StringIO):
-    """Class that merges tee'd stdout and stderr into a single buffer, namely itself. 
+    """Class that merges tee'd stdout and stderr into a single buffer, namely itself.
     This represents what a user would actually see on the command line.
     """
 
@@ -101,6 +101,17 @@ class BaseShell(object):
         self.buffer = []
         self.need_more_lines = False
         self.mlprompt = None
+        self.github = None
+
+    def execute_github(self, line):
+        if self.github is None:
+            return False
+        line = line.strip('\n')
+        tokens = line.split(' ')
+        if len(tokens) > 1 and tokens[0].lower() == 'gh':
+            self.github.execute(tokens[1:])
+            return True
+        return False
 
     def emptyline(self):
         """Called when an empty line has been entered."""
@@ -123,7 +134,8 @@ class BaseShell(object):
                     else io.StringIO()
         try:
             ts0 = time.time()
-            self.execer.exec(code, mode='single', glbs=self.ctx)  # no locals
+            if not self.execute_github(line):
+                self.execer.exec(code, mode='single', glbs=self.ctx)  # no locals
             ts1 = time.time()
             if hist.last_cmd_rtn is None:
                 hist.last_cmd_rtn = 0  # returncode for success

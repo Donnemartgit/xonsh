@@ -11,6 +11,7 @@ from xonsh import __version__
 from xonsh.shell import Shell
 from xonsh.pretty import pprint
 from xonsh.jobs import ignore_sigtstp
+from xonsh.github import GitHub
 
 parser = ArgumentParser(description='xonsh')
 parser.add_argument('-V', '--version',
@@ -95,6 +96,7 @@ def main(argv=None):
         code = shell.execer.compile(code, mode='exec', glbs=shell.ctx)
         shell.execer.exec(code, mode='exec', glbs=shell.ctx)
     else:
+        shell.shell.github = GitHub()
         # otherwise, enter the shell
         env['XONSH_INTERACTIVE'] = True
         ignore_sigtstp()

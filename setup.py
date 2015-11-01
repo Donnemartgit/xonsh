@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-"""The xonsh installer."""
+"""The gitsome installer."""
 from __future__ import print_function, unicode_literals
 import os
 import sys
@@ -16,7 +16,7 @@ except ImportError:
     from distutils.command.install import install as install
     HAVE_SETUPTOOLS = False
 
-from xonsh import __version__ as XONSH_VERSION
+from xonsh import __version__ as VERSION
 
 TABLES = ['xonsh/lexer_table.py', 'xonsh/parser_table.py']
 
@@ -56,7 +56,7 @@ if HAVE_SETUPTOOLS:
 
 def main():
     if sys.version_info[0] < 3:
-        sys.exit('xonsh currently requires Python 3.4+')
+        sys.exit('gitsome currently requires Python 3.4+')
     try:
         if '--name' not in sys.argv:
             print(logo)
@@ -65,71 +65,40 @@ def main():
     with open(os.path.join(os.path.dirname(__file__), 'README.rst'), 'r') as f:
         readme = f.read()
     skw = dict(
-        name='xonsh',
-        description='an exotic, usable shell',
+        name='gitsome',
+        description='gitsome shell forked from xonsh',
         long_description=readme,
         license='BSD',
-        version=XONSH_VERSION,
-        author='Anthony Scopatz',
-        maintainer='Anthony Scopatz',
-        author_email='scopatz@gmail.com',
-        url='https://github.com/scopatz/xonsh',
+        version=VERSION,
+        author='Donne Martin',
+        maintainer='Donne Martin',
+        author_email='donne.martin@gmail.com',
+        url='https://github.com/donnemartin/gitsome',
         platforms='Cross Platform',
         classifiers=['Programming Language :: Python :: 3'],
-        packages=['xonsh'],
-        scripts=['scripts/xonsh'],
+        packages=['gitsome'],
+        scripts=['scripts/xonsh',
+                 'scripts/gitsome'],
         cmdclass={'install': xinstall, 'sdist': xsdist},
         )
     if HAVE_SETUPTOOLS:
         skw['setup_requires'] = ['ply']
-        skw['install_requires'] = ['ply']
+        skw['install_requires'] =[
+            'numpydoc==0.5',
+            'ply==3.4',
+            'prompt-toolkit==0.51',
+            'requests==2.8.1',
+            'github3.py==0.9.4',
+        ],
         skw['entry_points'] = {
-            'pygments.lexers': ['xonsh = xonsh.pyghooks:XonshLexer',
-                                'xonshcon = xonsh.pyghooks:XonshConsoleLexer',
+            'pygments.lexers': ['gitsome = xonsh.pyghooks:XonshLexer',
+                                'gitsomecon = xonsh.pyghooks:XonshConsoleLexer',
                                 ],
             }
         skw['cmdclass']['develop'] = xdevelop
     setup(**skw)
 
-logo = """
-                           ╓██▄
-                          ╙██▀██╕
-                         ▐██4Φ█▀█▌
-                       ²██▄███▀██^██
-                     -███╩▀ " ╒▄█████▀█
-                      ║██▀▀W╤▄▀ ▐║█╘ ╝█
-                 ▄m▀%Φ▀▀  ╝*"    ,α█████▓▄,▄▀Γ"▀╕
-                 "▀██¼"     ▄═╦█╟║█▀ ╓ `^`   ,▄ ╢╕
-                  ,▀╫M█▐j╓╟▀ ╔▓▄█▀  '║ ╔    ╣║▌  ▀▄
-               ▄m▀▀███╬█╝▀  █▀^      "ÜM  j▐╟╫╨▒   ╙▀≡═╤═m▀╗
-               █æsæ╓  ╕, ,▄Ä   ▐'╕H   LU  ║║╠╫Å^2=⌐         █
-            ▄æ%Å███╠█ª╙▄█▀      $1╙       ║║╟╫╩*T▄           ▌
-           ╙╗%▄,╦██▌█▌█╢M         ╕      M║║║║█═⌐ⁿ"^         ╫
-             ╙╣▀████@█░█    ▌╕╕   `      ▌║▐▐║█D═≈⌐¬ⁿ      s ║⌐
-               ╙╬███▓║█`     ▌╚     ╕   ╕▌║▐▐╣▌⌐*▒▒Dù`       ▐▌
-                ╙╬██╨U█      ╟      $ ▌ ▌▌▐▐▐M█▄═≤⌐%       ╓⌐ ▌
-                 ║║█▄▌║             ╟ ▌ ▌M▐▐▐M█▀▒▒▒22,       ▐▌
-                  ███╙^▌            ║ ▌ ⌐M▐▐▐M█≤⌐⌐¬──        ▐M
-                  ║██ ▌╙   ╓       H║ ▌╒ M║▐▐M█"^^^^^"ⁿ      ║
-                   ██╕╙@▓   ╕      ▌║ H'  ║▐▐▐█══=.,,,       █
-                   ╙█▓╔╚╚█     ╠   ▌└╒ ▌▐ ╚║║║▀****ⁿ -      ╓▌
-                    ╙█▌¼V╚▌   ▌  ╕ ▌ ║╒ ║ ▌▒╠█▀≤≤≤≤≤⌐       █
-                     ╙█▌╔█╚▌     ┘ M ▌║ ╫ UUM██J^^"        ▐▌
-                      ╙██╙█╙▌  ╕$j  ▐⌐▌ ▌║╝╟█Å%%%≈═        █
-                       ╙╣█╣█^▌ ╠║▐  ║ ▌▐.DU██^[""ⁿ       -╒▌
-                         ▀█▄█`▌ ░M▀ ▌▐ Å£╝╝█╜%≈═╓""w   ⁿ⌐ █
-                          `▀▄▀`▌ ▌█▐⌐║▐UW╖██%≤═░*─    =z ▄Γ
-                            ╙██╙▄▌█  ▌Å╛╣██╨%╤ƒⁿ=    -` ▄┘
-                              █▌╢▓▌▌ W £6█╤,"ⁿ `   ▄≡▀▀▀
-                               █"█▌▌╟Å╓█╓█▀%`    ▄▀
-                               ╙▌██`▒U▓U█%╗*     █
-                                ▌╫║ ▌ÅÅ║▀╛¬`      `"█
-                                ▌╫  ╫╟ █▄     ~╦%▒╥4^
-                                ▌▌  "M█ `▀╕ X╕"╗▄▀^
-                                █▌   ╓M   ╙▀e▀▀^
-                                ╙██▄▄▀
-                                  ^^
-"""
+logo = ''
 
 if __name__ == '__main__':
     main()

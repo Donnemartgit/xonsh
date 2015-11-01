@@ -79,10 +79,16 @@ def is_callable_default(x):
     """Checks if a value is a callable default."""
     return callable(x) and getattr(x, '_xonsh_callable_default', False)
 
-DEFAULT_PROMPT = ('{BOLD_GREEN}{user}@{hostname}{BOLD_BLUE} '
-                  '{cwd}{branch_color}{curr_branch} '
-                  '{BOLD_BLUE}${NO_COLOR} ')
-DEFAULT_TITLE = '{user}@{hostname}: {cwd} | xonsh'
+DEFAULT_PROMPT = ('{BOLD_RED}{user} '
+                  '{BOLD_WHITE}at '
+                  '{BOLD_RED}{hostname} '
+                  '{BOLD_WHITE}in '
+                  '{BOLD_GREEN}{cwd} '
+                  '{BOLD_WHITE}on'
+                  '{branch_color}{curr_branch} '
+                  '{BOLD_WHITE}\n'
+                  '${NO_COLOR} ')
+DEFAULT_TITLE = '{user} at {hostname}: {cwd} | xonsh'
 
 @default_value
 def xonsh_data_dir(env):
@@ -118,7 +124,7 @@ DEFAULT_VALUES = {
                              '/opt/local/etc/profile.d/bash_completion.sh')
                         if ON_MAC else
                         ('/usr/share/bash-completion/bash_completion',
-                             '/usr/share/bash-completion/completions/git') 
+                             '/usr/share/bash-completion/completions/git')
                         if ON_ARCH else
                         ('/etc/bash_completion',
                              '/usr/share/bash-completion/completions/git')),
@@ -140,7 +146,7 @@ DEFAULT_VALUES = {
     'PROMPT_TOOLKIT_STYLES': None,
     'PUSHD_MINUS': False,
     'PUSHD_SILENT': False,
-    'SHELL_TYPE': 'readline',
+    'SHELL_TYPE': 'prompt_toolkit',
     'SUGGEST_COMMANDS': True,
     'SUGGEST_MAX_NUM': 5,
     'SUGGEST_THRESHOLD': 3,
@@ -152,7 +158,7 @@ DEFAULT_VALUES = {
     'XONSHRC': ((os.path.join(os.environ['ALLUSERSPROFILE'],
                               'xonsh', 'xonshrc'),
                 os.path.expanduser('~/.xonshrc')) if ON_WINDOWS
-               else ('/etc/xonshrc', os.path.expanduser('~/.xonshrc'))), 
+               else ('/etc/xonshrc', os.path.expanduser('~/.xonshrc'))),
     'XONSH_CONFIG_DIR': xonsh_config_dir,
     'XONSH_DATA_DIR': xonsh_data_dir,
     'XONSH_ENCODING': DEFAULT_ENCODING,
@@ -334,6 +340,38 @@ def locate_binary(name, cwd):
         return
 
     return binary_location
+
+
+def current_user_and_repo(cwd=None):
+    repo = None
+    try:
+        cmd = ['git', 'remote', '-v']
+        s = subprocess.check_output(cmd,
+                                    stderr=subprocess.PIPE,
+                                    cwd=cwd,
+                                    universal_newlines=True)
+        # s:
+        #   origin  https://github.com/donnemartin/gitsome.git (fetch)\n
+        #   origin  https://github.com/donnemartin/gitsome.git (push)
+        s = s.strip()
+        excludes = ['.git', ' (fetch)', ' (push)']
+        for exclude in excludes:
+            s = s.replace(exclude, '')
+        # s:
+        #   origin  https://github.com/donnemartin/gitsome\n
+        #   origin  https://github.com/donnemartin/gitsome
+        s = s.split('\n')[0]
+        # s:
+        #   origin  https://github.com/donnemartin/gitsome
+        s = s.split('/')
+        # s:
+        #   ['origin\thttps:', '', 'github.com', 'donnemartin', 'gitsome']
+        user, repo = s[3], s[4]
+        # s:
+        #   ['donnemartin', 'gitsome']
+    except (subprocess.CalledProcessError, FileNotFoundError, IndexError):
+        pass
+    return user, repo
 
 
 def ensure_git(func):

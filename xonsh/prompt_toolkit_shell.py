@@ -76,7 +76,7 @@ class PromptToolkitShell(BaseShell):
                     completer=self.pt_completer,
                     history=self.history,
                     key_bindings_registry=self.key_bindings_manager.registry,
-                    display_completions_in_columns=True)
+                    display_completions_in_columns=False)
                 if not line:
                     self.emptyline()
                 else:
