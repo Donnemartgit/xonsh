@@ -4,6 +4,8 @@
 from __future__ import print_function, unicode_literals
 import os
 import sys
+import json
+from tempfile import TemporaryDirectory
 try:
     from setuptools import setup
     from setuptools.command.sdist import sdist
@@ -16,15 +18,27 @@ except ImportError:
     from distutils.command.install import install as install
     HAVE_SETUPTOOLS = False
 
-from xonsh import __version__ as VERSION
+try:
+    from jupyter_client.kernelspec import KernelSpecManager
+    HAVE_JUPYTER = True
+except ImportError:
+    HAVE_JUPYTER = False
+
+from xonsh import __version__ as XONSH_VERSION
 
 TABLES = ['xonsh/lexer_table.py', 'xonsh/parser_table.py']
+
+
+CONDA = ("--conda" in sys.argv)
+if CONDA:
+    sys.argv.remove("--conda")
 
 def clean_tables():
     for f in TABLES:
         if os.path.isfile(f):
             os.remove(f)
             print('Remove ' + f)
+
 
 def build_tables():
     print('Building lexer and parser tables.')
@@ -34,17 +48,47 @@ def build_tables():
            outputdir='xonsh')
     sys.path.pop(0)
 
+
+def install_jupyter_hook(root=None):
+    if not HAVE_JUPYTER:
+        print('Could not install Jupyter kernel spec, please install Jupyter/IPython.')
+        return
+    spec = {"argv": [sys.executable, "-m", "xonsh.jupyter_kernel",
+                                     "-f", "{connection_file}"],
+            "display_name":"Xonsh",
+            "language":"xonsh",
+            "codemirror_mode":"shell",
+            }
+    if CONDA:
+        d = os.path.join(sys.prefix + '/share/jupyter/kernels/xonsh/')
+        os.makedirs(d, exist_ok=True)
+        if sys.platform == 'win32':
+            # Ensure that conda-build detects the hard coded prefix
+            spec['argv'][0] = spec['argv'][0].replace(os.sep, os.altsep)
+        with open(os.path.join(d, 'kernel.json'), 'w') as f:
+            json.dump(spec, f, sort_keys=True)
+    else:
+        with TemporaryDirectory() as d:
+            os.chmod(d, 0o755)  # Starts off as 700, not user readable
+            with open(os.path.join(d, 'kernel.json'), 'w') as f:
+                json.dump(spec, f, sort_keys=True)
+            print('Installing Jupyter kernel spec...')
+            KernelSpecManager().install_kernel_spec(d, 'xonsh', user=('--user' in sys.argv), replace=True, prefix=root)
+
 class xinstall(install):
     def run(self):
         clean_tables()
         build_tables()
+        install_jupyter_hook(self.root if self.root else None)
         install.run(self)
+
 
 class xsdist(sdist):
     def make_release_tree(self, basedir, files):
         clean_tables()
         build_tables()
         sdist.make_release_tree(self, basedir, files)
+
 
 if HAVE_SETUPTOOLS:
     class xdevelop(develop):
@@ -94,8 +138,11 @@ def main():
             'pygments.lexers': ['gitsome = xonsh.pyghooks:XonshLexer',
                                 'gitsomecon = xonsh.pyghooks:XonshConsoleLexer',
                                 ],
+            'console_scripts': ['xonsh = xonsh.main:main'],
             }
         skw['cmdclass']['develop'] = xdevelop
+    else:
+        skw['scripts'] = ['scripts/xonsh', 'scripts/xonsh.bat']
     setup(**skw)
 
 logo = ''

@@ -12,10 +12,13 @@ from functools import wraps
 from collections import MutableMapping, MutableSequence, MutableSet, namedtuple
 
 from xonsh import __version__ as XONSH_VERSION
-from xonsh.tools import TERM_COLORS, ON_WINDOWS, ON_MAC, ON_LINUX, ON_ARCH, \
-    is_int, always_true, always_false, ensure_string, is_env_path, str_to_env_path, \
-    env_path_to_str, is_bool, to_bool, bool_to_str, is_history_tuple, to_history_tuple, \
-    history_tuple_to_str, is_float, string_types, is_string, DEFAULT_ENCODING
+from xonsh.tools import (
+    TERM_COLORS, ON_WINDOWS, ON_MAC, ON_LINUX, ON_ARCH, IS_ROOT,
+    always_true, always_false, ensure_string, is_env_path, str_to_env_path,
+    env_path_to_str, is_bool, to_bool, bool_to_str, is_history_tuple, to_history_tuple,
+    history_tuple_to_str, is_float, string_types, is_string, DEFAULT_ENCODING,
+    is_completions_display_value, to_completions_display_value
+)
 from xonsh.dirstack import _get_cwd
 from xonsh.foreign_shells import DEFAULT_SHELLS, load_foreign_envs
 
@@ -47,10 +50,12 @@ represent environment variable validation, conversion, detyping.
 """
 
 DEFAULT_ENSURERS = {
+    'AUTO_CD': (is_bool, to_bool, bool_to_str),
     'AUTO_SUGGEST': (is_bool, to_bool, bool_to_str),
     'BASH_COMPLETIONS': (is_env_path, str_to_env_path, env_path_to_str),
     'CASE_SENSITIVE_COMPLETIONS': (is_bool, to_bool, bool_to_str),
     re.compile('\w*DIRS'): (is_env_path, str_to_env_path, env_path_to_str),
+    'COMPLETIONS_DISPLAY': (is_completions_display_value, to_completions_display_value, str),
     'LC_COLLATE': (always_false, locale_convert('LC_COLLATE'), ensure_string),
     'LC_CTYPE': (always_false, locale_convert('LC_CTYPE'), ensure_string),
     'LC_MESSAGES': (always_false, locale_convert('LC_MESSAGES'), ensure_string),
@@ -118,6 +123,7 @@ def xonshconfig(env):
 # to set them they have to do a copy and write them to the environment.
 # try to keep this sorted.
 DEFAULT_VALUES = {
+    'AUTO_CD': False,
     'AUTO_PUSHD': False,
     'AUTO_SUGGEST': True,
     'BASH_COMPLETIONS': (('/usr/local/etc/bash_completion',
@@ -130,6 +136,7 @@ DEFAULT_VALUES = {
                              '/usr/share/bash-completion/completions/git')),
     'CASE_SENSITIVE_COMPLETIONS': ON_LINUX,
     'CDPATH': (),
+    'COMPLETIONS_DISPLAY': 'multi',
     'DIRSTACK_SIZE': 20,
     'FORCE_POSIX_PATHS': False,
     'INDENT': '    ',
@@ -572,6 +579,7 @@ else:
 
 FORMATTER_DICT = dict(
     user=os.environ.get(USER, '<user>'),
+    prompt_end='#' if IS_ROOT else '$',
     hostname=socket.gethostname().split('.', 1)[0],
     cwd=_replace_home_cwd,
     cwd_dir=lambda: os.path.dirname(_replace_home_cwd()),

@@ -1622,6 +1622,8 @@ class Parser(object):
                            right=p[3],
                            lineno=self.lineno,
                            col_offset=self.col)
+        else:
+            assert False
         p[0] = p0
 
     def p_yield_expr_or_testlist_comp(self, p):
@@ -2407,8 +2409,13 @@ class Parser(object):
                                     col=self.col)
                     p0._cliarg_action = 'extend'
                 else:
-                    p0.s = os.path.expanduser(p0.s)
+                    p0 = xonsh_call('__xonsh_expand_path__', args=[p0],
+                                    lineno=self.lineno, col=self.col)
                     p0._cliarg_action = 'append'
+            elif isinstance(p1, ast.Str):
+                p0 = xonsh_call('__xonsh_expand_path__', args=[p1],
+                                lineno=self.lineno, col=self.col)
+                p0._cliarg_action = 'append'
             elif isinstance(p1, ast.AST):
                 p0 = p1
                 p0._cliarg_action = 'append'

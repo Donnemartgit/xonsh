@@ -3,7 +3,7 @@ import os
 import builtins
 from warnings import warn
 
-from prompt_toolkit.shortcuts import get_input
+from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.key_binding.manager import KeyBindingManager
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from pygments.token import Token
@@ -48,6 +48,7 @@ class PromptToolkitShell(BaseShell):
         self.pt_completer = PromptToolkitCompleter(self.completer, self.ctx)
         self.key_bindings_manager = KeyBindingManager(
             enable_auto_suggest_bindings=True,
+            enable_open_in_editor=True,
             enable_search=True, enable_abort_and_exit_bindings=True)
         load_xonsh_bindings(self.key_bindings_manager)
 
@@ -68,12 +69,15 @@ class PromptToolkitShell(BaseShell):
                     auto_suggest = _auto_suggest
                 else:
                     auto_suggest = None
-                line = get_input(
+                completions_display = builtins.__xonsh_env__.get('COMPLETIONS_DISPLAY')
+                multicolumn = (completions_display == 'multi')
+                completer = None if completions_display == 'none' else self.pt_completer
+                line = prompt(
                     mouse_support=mouse_support,
                     auto_suggest=auto_suggest,
                     get_prompt_tokens=token_func,
                     style=style_cls,
-                    completer=self.pt_completer,
+                    completer=completer,
                     history=self.history,
                     key_bindings_registry=self.key_bindings_manager.registry,
                     display_completions_in_columns=False)
